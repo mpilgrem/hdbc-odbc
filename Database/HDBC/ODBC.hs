@@ -13,11 +13,14 @@ Written by John Goerzen, jgoerzen\@complete.org
 -}
 
 module Database.HDBC.ODBC
-    (
-     connectODBC, Connection(), getQueryInfo, setAutoCommit
-    )
+  ( connectODBC
+  , Connection ()
+  , getQueryInfo
+  , getTablesOfType
+  , getTableTypes
+  , setAutoCommit
+  ) where
 
-where
-
-import Database.HDBC.ODBC.Connection(connectODBC, Connection())
-import Database.HDBC.ODBC.ConnectionImpl(getQueryInfo, setAutoCommit)
+import Database.HDBC.ODBC.Connection (connectODBC, Connection ())
+import Database.HDBC.ODBC.ConnectionImpl (getQueryInfo, getTablesOfType,
+  getTableTypes, setAutoCommit)

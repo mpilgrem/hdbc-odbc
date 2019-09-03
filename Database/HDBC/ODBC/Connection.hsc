@@ -2,7 +2,10 @@
 {-# CFILES hdbc-odbc-helper.c #-}
 -- Above line for hugs
 
-module Database.HDBC.ODBC.Connection (connectODBC, Impl.Connection) where
+module Database.HDBC.ODBC.Connection
+  ( connectODBC
+  , Impl.Connection
+  ) where
 
 import Database.HDBC.Types
 import Database.HDBC.DriverUtils
@@ -124,28 +127,36 @@ mkConn args iconn = withDbcOrDie iconn $ \cconn ->
 
        when txnsupport . void $ fSetAutoCommit cconn False
        return $ Impl.Connection {
-                            Impl.getQueryInfo = fGetQueryInfo iconn children,
-                            Impl.disconnect = fdisconnect iconn children,
-                            Impl.commit = fcommit iconn,
-                            Impl.rollback = frollback iconn,
-                            Impl.run = frun iconn children,
-                            Impl.prepare = newSth iconn children,
-                            Impl.clone = connectODBC args,
-                            -- FIXME: add clone
-                            Impl.hdbcDriverName = "odbc",
-                            Impl.hdbcClientVer = clientver,
-                            Impl.proxiedClientName = clientname,
-                            Impl.proxiedClientVer = proxiedclientver,
-                            Impl.dbServerVer = serverver,
-                            Impl.dbTransactionSupport = txnsupport,
-                            Impl.getTables = fgettables iconn,
-                            Impl.describeTable = fdescribetable iconn,
-                            Impl.setAutoCommit = \x -> withDbcOrDie iconn $ \conn -> fSetAutoCommit conn x
-                           }
+         Impl.getQueryInfo = fGetQueryInfo iconn children,
+         Impl.disconnect = fdisconnect iconn children,
+         Impl.commit = fcommit iconn,
+         Impl.rollback = frollback iconn,
+         Impl.run = frun iconn children,
+         Impl.prepare = newSth iconn children,
+         Impl.clone = connectODBC args,
+         -- FIXME: add clone
+         Impl.hdbcDriverName = "odbc",
+         Impl.hdbcClientVer = clientver,
+         Impl.proxiedClientName = clientname,
+         Impl.proxiedClientVer = proxiedclientver,
+         Impl.dbServerVer = serverver,
+         Impl.dbTransactionSupport = txnsupport,
+         Impl.getTables = fgettables' iconn "TABLE",
+         Impl.getTablesOfType = fgettables' iconn,
+         Impl.getTableTypes = fgettabletypes iconn,
+         Impl.describeTable = fdescribetable iconn,
+         Impl.setAutoCommit = \x -> withDbcOrDie iconn $ \conn -> fSetAutoCommit conn x
+        }
 
 --------------------------------------------------
 -- Guts here
 --------------------------------------------------
+
+fgettables' :: DbcWrapper -> String -> IO [String]
+fegettables' _ [] = pure []
+fgettables' iconn sqlTableTypes =
+  withCStringLen sqlTableTypes $ \(c_tts, ttlen) ->
+    fgettables iconn c_tts (fromIntegral ttlen)
 
 frun :: DbcWrapper -> ChildList -> String -> [SqlValue] -> IO Integer
 frun conn children query args =

@@ -7,6 +7,7 @@ module Database.HDBC.ODBC.Statement (
    fGetQueryInfo,
    newSth,
    fgettables,
+   fgettabletypes,
    fdescribetable
  ) where
 
@@ -113,16 +114,29 @@ newSth indbo mchildren query =
        addChild mchildren retval
        return retval
 
-fgettables :: DbcWrapper -> IO [String]
-fgettables iconn = do
+fgettables :: DbcWrapper -> CString -> SQLSMALLINT -> IO [String]
+fgettables iconn sqlTableType ttlen = do
   hdbcTrace "fgettables"
   sstate <- newSState iconn ""
   withStmtOrDie (sstmt sstate) $ \hStmt -> do
     hdbcTrace "fgettables got stmt handle"
-    simpleSqlTables hStmt >>= checkError "gettables simpleSqlTables" (StmtHandle hStmt)
+    simpleSqlTables hStmt sqlTableType ttlen >>=
+      checkError "fgettables simpleSqlTables" (StmtHandle hStmt)
     fgetcolinfo hStmt >>= void . swapMVar (colinfomv sstate)
   results <- fetchAllRows' $ wrapStmt sstate
   return $ map (\x -> fromSql (x !! 2)) results
+
+fgettabletypes :: DbcWrapper -> IO [String]
+fgettabletypes iconn = do
+  hdbcTrace "fgettabletypes"
+  sstate <- newSState iconn ""
+  withStmtOrDie (sstmt sstate) $ \hStmt -> do
+    hdbcTrace "fgettabletypes got stmt handle"
+    simpleSqlTableTypes hStmt >>=
+      checkError "fgettabletypes simpleSqlTableTypes" (StmtHandle hStmt)
+    fgetcolinfo hStmt >>= void . swapMVar (colinfomv sstate)
+  results <- fetchAllRows' $ wrapStmt sstate
+  return $ map (\x -> fromSql (x !! 3)) results
 
 fdescribetable :: DbcWrapper -> String -> IO [(String, SqlColDesc)]
 fdescribetable iconn tablename = do
@@ -1042,7 +1056,10 @@ foreign import #{CALLCONV} safe "sql.h SQLFetch"
   sqlFetch :: SQLHSTMT -> IO #{type SQLRETURN}
 
 foreign import ccall safe "hdbc-odbc-helper.h simpleSqlTables"
-  simpleSqlTables :: SQLHSTMT -> IO #{type SQLRETURN}
+  simpleSqlTables :: SQLHSTMT -> CString -> SQLSMALLINT -> IO #{type SQLRETURN}
+
+foreign import ccall safe "hdbc-odbc-helper.h simpleSqlTableTypes"
+  simpleSqlTableTypes :: SQLHSTMT -> IO #{type SQLRETURN}
 
 foreign import ccall safe "hdbc-odbc-helper.h simpleSqlColumns"
   simpleSqlColumns :: SQLHSTMT -> Ptr CChar ->

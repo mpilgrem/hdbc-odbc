@@ -13,7 +13,11 @@ int sqlSucceeded(SQLRETURN ret);
 SQLLEN nullDataHDBC;
 void *getSqlOvOdbc3(void);
 
-SQLRETURN simpleSqlTables(SQLHSTMT stmt);
+SQLRETURN simpleSqlTables(SQLHSTMT stmt, SQLCHAR *tabletype,
+                          SQLSMALLINT ttlen);
+
+SQLRETURN simpleSqlTableTypes(SQLHSTMT stmt);
+
 SQLRETURN simpleSqlColumns(SQLHSTMT stmt, SQLCHAR *tablename,
                                   SQLSMALLINT tnlen);
 

@@ -5,26 +5,31 @@ import qualified Database.HDBC.Types as Types
 import Database.HDBC.ColTypes as ColTypes
 import Control.Exception (finally)
 
-data Connection =
-    Connection {
-                getQueryInfo :: String -> IO ([SqlColDesc], [(String, SqlColDesc)]),
-                disconnect :: IO (),
-                commit :: IO (),
-                rollback :: IO (),
-                run :: String -> [Types.SqlValue] -> IO Integer,
-                prepare :: String -> IO Types.Statement,
-                clone :: IO Connection,
-                hdbcDriverName :: String,
-                hdbcClientVer :: String,
-                proxiedClientName :: String,
-                proxiedClientVer :: String,
-                dbServerVer :: String,
-                dbTransactionSupport :: Bool,
-                getTables :: IO [String],
-                describeTable :: String -> IO [(String, ColTypes.SqlColDesc)],
-                -- | Changes AutoCommit mode of the given connection. Returns previous value.
-                setAutoCommit :: Bool -> IO Bool
-               }
+data Connection = Connection
+  { getQueryInfo         :: String -> IO ([SqlColDesc], [(String, SqlColDesc)])
+  , disconnect           :: IO ()
+  , commit               :: IO ()
+  , rollback             :: IO ()
+  , run                  :: String -> [Types.SqlValue] -> IO Integer
+  , prepare              :: String -> IO Types.Statement
+  , clone                :: IO Connection
+  , hdbcDriverName       :: String
+  , hdbcClientVer        :: String
+  , proxiedClientName    :: String
+  , proxiedClientVer     :: String
+  , dbServerVer          :: String
+  , dbTransactionSupport :: Bool
+  , getTables            :: IO [String]
+  -- | Get a list of the names of tables of the specified table type(s), such as
+  -- \"TABLE\" or \"VIEW\". More than one table type is specified as a comma
+  -- delimited list, such as \"TABLE,VIEW\".
+  , getTablesOfType      :: String -> IO [String]
+  -- | Get a list of the names of the available table types.
+  , getTableTypes        :: IO [String]
+  , describeTable        :: String -> IO [(String, ColTypes.SqlColDesc)]
+  -- | Changes AutoCommit mode of the given connection. Returns previous value.
+  , setAutoCommit        :: Bool -> IO Bool
+  }
 
 instance Types.IConnection Connection where
   disconnect = disconnect
